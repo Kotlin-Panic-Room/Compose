@@ -65,6 +65,6 @@ data class Player(
 
     fun moveToClosestPoint(points: List<Point>) {
         val closestPoint = points.minByOrNull { this.position.distance(it) } ?: return
-        this.moveTo(closestPoint)
+//        this.moveTo(closestPoint)
     }
 }
