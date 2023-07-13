@@ -1,6 +1,6 @@
 import java.lang.Thread.sleep
 import kotlin.concurrent.thread
-
+import kotlin.random.Random
 
 class Driver {
     val FLIPPED_KEY_MAP = mapOf(
@@ -17,6 +17,7 @@ class Driver {
     private val keyUpObjs = mutableMapOf<Int, Long>()
 
     private val driver = System.loadLibrary("drivers/dd2023.x64.dll")
+
 
     init {
         thread(start = true) {
@@ -78,7 +79,7 @@ class Driver {
     }
 
     private fun keyDown(key: Int) {
-       DD_Key(key, 1)
+        DD_Key(key, 1)
     }
 
     external fun DD_Key(key: Int, flag: Int): Int

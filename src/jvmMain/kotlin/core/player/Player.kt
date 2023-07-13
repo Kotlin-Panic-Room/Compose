@@ -1,12 +1,14 @@
 package core.player
 
 import java.awt.Point
+import java.lang.Thread.sleep
+import kotlin.math.abs
 
 data class Player(
     var position: Point,
     var state: State,
     var currentChannel: Int = 1,
-    var commands: MutableList<Command> = mutableListOf(),
+
 ) {
     companion object {
         const val JUMP_BUTTON = "alt"
@@ -49,4 +51,20 @@ data class Player(
         return this.state == State.JUMPING
     }
 
+    fun recordPosition() {
+        sleep(600)
+    }
+
+    fun checkIsInXRange(curX: Float, xRange: Float): Boolean {
+        return abs(this.position.x - curX) <= xRange
+    }
+
+    fun checkIsInYRange(curY: Float, yRange: Float): Boolean {
+        return abs(this.position.y - curY) <= yRange
+    }
+
+    fun moveToClosestPoint(points: List<Point>) {
+        val closestPoint = points.minByOrNull { this.position.distance(it) } ?: return
+        this.moveTo(closestPoint)
+    }
 }

@@ -18,6 +18,9 @@ repositories {
 
 dependencies {
     implementation("org.openpnp:opencv:4.5.1-2")
+
+
+    implementation("com.1stleg:jnativehook:2.1.0")
 }
 
 kotlin {
