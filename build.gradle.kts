@@ -18,20 +18,20 @@ repositories {
 dependencies {
     // JavaCV
     implementation("org.bytedeco:javacv-platform:1.5.6")
-    // TensorFlow
-    implementation("org.tensorflow:tensorflow:1.4.0")
-    implementation("org.tensorflow:proto:1.4.0")
     // JNA
     implementation("net.java.dev.jna:jna:5.8.0")
     implementation("net.java.dev.jna:jna-platform:5.8.0")
 
     implementation("com.1stleg:jnativehook:2.1.0")
 
+    //JACKSON
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.5")
+
 }
 
 kotlin {
     jvm {
-        jvmToolchain(11)
+        jvmToolchain(17)
         withJava()
     }
     sourceSets {

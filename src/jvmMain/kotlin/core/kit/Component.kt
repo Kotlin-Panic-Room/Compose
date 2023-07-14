@@ -1,6 +1,6 @@
 package core.kit
 
-import core.player.Action
+import core.player.role.common.Skill
 
 interface Component {
     val activationOnSkillReady: String?
@@ -9,9 +9,10 @@ interface Component {
     val activationOnNotInSkillBuff: String?
     val waitUntilReady: Boolean?
 
+    fun execute(obj: Any? = null)
     fun update(vararg args: Any)
 
-    fun isActivated(action: Action): Boolean {
-        return action.isReady()
+    fun isActivated(skill: Skill<*>): Boolean {
+        return skill.isReady()
     }
 }

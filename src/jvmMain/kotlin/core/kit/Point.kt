@@ -1,13 +1,18 @@
 package core.kit
 
+import core.Utils.randMs
+import core.player.Command
 import core.player.Player
+import java.lang.Thread.sleep
 
 class Point(
     private var x: Float,
     private var y: Float,
-    frequency: Int = 1,
-    skip: Boolean = false,
-    adjust: Boolean = false,
+    var index: Long,
+    var frequency: Int = 1,
+    var skip: Boolean = false,
+    var adjust: Boolean = false,
+    var commands: List<Command>,
     private var activationWithinXRange: Float? = null,
     private var activationWithinYRange: Float? = null,
     private var activationNotWithinXRange: Float? = null,
@@ -38,6 +43,32 @@ class Point(
             isConditionalPoint = true
         }
         val commands = ArrayList<String>()
+    }
+
+    override fun execute(obj: Any?) {
+        if (skip) return
+        if (frequency > 1) {
+            if (index % frequency != 0L) return
+        }
+        val player = obj as Player
+        Player.role?.let { role ->
+            activationOnSkillReady?.let {
+                val readiness = role.skills.find {
+                    val clzName = it::class.simpleName
+                    activationOnSkillReady == clzName
+                }?.isReady() ?: true
+                if (!readiness) return
+            }
+            role.move(Pair(this.x, this.y), Pair(player.position.first, player.position.second))
+            // check adjust
+            if (adjust) role.adjust(Pair(this.x, this.y))
+            this.commands.forEach {
+                it.execute()
+            }
+        }
+
+
+        sleep(randMs(200, 400).toLong())
     }
 
     override fun update(vararg args: Any) {

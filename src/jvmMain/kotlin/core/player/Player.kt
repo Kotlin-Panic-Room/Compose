@@ -1,21 +1,19 @@
 package core.player
 
-import java.awt.Point
+import core.kit.Point
+import core.player.role.common.Role
 import java.lang.Thread.sleep
 import kotlin.math.abs
 
-data class Player(
-    var position: Point,
-    var state: State,
-    var currentChannel: Int = 1,
+object Player {
 
-) {
-    companion object {
-        const val JUMP_BUTTON = "alt"
-        const val MOVEMENT_STATE_STANDING = 0
-        const val MOVEMENT_STATE_JUMPING = 1
-        const val MOVEMENT_STATE_FALLING = 2
-    }
+    var position: Pair<Float, Float> = Pair(0f, 0f)
+    var role: Role<*>? = null
+    var state: State = State.STANDING
+    var currentChannel: Int = 1
+    var routine: Routine = Routine(listOf())
+
+
 
     fun waitForWhileStanding(ms: Int = 2000): Boolean {
         for (i in 0 until ms / 10) {
@@ -56,15 +54,16 @@ data class Player(
     }
 
     fun checkIsInXRange(curX: Float, xRange: Float): Boolean {
-        return abs(this.position.x - curX) <= xRange
+        return abs(this.position.first - curX) <= xRange
     }
 
     fun checkIsInYRange(curY: Float, yRange: Float): Boolean {
-        return abs(this.position.y - curY) <= yRange
+        return abs(this.position.second - curY) <= yRange
     }
 
-    fun moveToClosestPoint(points: List<Point>) {
-        val closestPoint = points.minByOrNull { this.position.distance(it) } ?: return
-//        this.moveTo(closestPoint)
+    fun moveToPoint(point: Point) {
+        if (!point.isWithInActivationRange(this)) return
+
+        point.execute()
     }
 }

@@ -6,6 +6,7 @@ import org.jnativehook.keyboard.NativeKeyEvent
 import org.jnativehook.keyboard.NativeKeyListener
 import org.jnativehook.mouse.NativeMouseEvent
 import org.jnativehook.mouse.NativeMouseListener
+import java.awt.Toolkit
 import kotlin.system.exitProcess
 
 class InputListener {
@@ -31,6 +32,7 @@ class InputListener {
                 onOffSwitchKey -> {
                     // turn on Config.enabled flag
                     Config.enabled = !Config.enabled
+                    Toolkit.getDefaultToolkit().beep()
                 }
 
                 reloadRoutineKey -> {
@@ -38,6 +40,7 @@ class InputListener {
                 }
 
                 recordPositionKey -> {
+
                 }
             }
         }
@@ -53,15 +56,15 @@ class InputListener {
 
     inner class MouseHooker : NativeMouseListener {
         override fun nativeMouseClicked(e: NativeMouseEvent) {
-            println("Mouse Clicked: " + e.point)
+//            println("Mouse Clicked: " + e.point)
         }
 
         override fun nativeMousePressed(e: NativeMouseEvent) {
-            println("Mouse Pressed: " + e.point)
+//            println("Mouse Pressed: " + e.point)
         }
 
         override fun nativeMouseReleased(e: NativeMouseEvent) {
-            println("Mouse Released: " + e.point)
+//            println("Mouse Released: " + e.point)
         }
     }
 }

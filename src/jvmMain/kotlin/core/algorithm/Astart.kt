@@ -78,6 +78,7 @@ class AStar {
         path.add(source)
 
         path.reverse()
+        Config.layout = path
         return path
     }
 

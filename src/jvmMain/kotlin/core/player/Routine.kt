@@ -1,5 +1,7 @@
 package core.player
 
+import core.kit.Point
+
 class Routine(
-    var sequences: MutableList<Sequence> = mutableListOf(),
+    var points: List<Point>,
 )

@@ -1,92 +1,105 @@
 package core.images
 
 import core.Config
-import org.opencv.core.*
-import org.opencv.imgcodecs.Imgcodecs
-import org.opencv.imgproc.Imgproc
+import org.bytedeco.javacpp.DoublePointer
+import org.bytedeco.javacpp.indexer.UByteRawIndexer
+import org.bytedeco.javacv.Java2DFrameUtils
+import org.bytedeco.opencv.global.opencv_core
+import org.bytedeco.opencv.global.opencv_core.CV_32F
+import org.bytedeco.opencv.global.opencv_imgcodecs
+import org.bytedeco.opencv.global.opencv_imgproc
+import org.bytedeco.opencv.opencv_core.Mat
+import org.bytedeco.opencv.opencv_core.Point
+import org.bytedeco.opencv.opencv_core.Point2f
+import org.bytedeco.opencv.opencv_core.Scalar
+import java.awt.image.BufferedImage
 import kotlin.math.pow
-import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
-class ImageProcessor {
+object ImageProcessor {
 
-    init {
-        System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
-    }
 
     fun invertImage(srcPath: String, destPath: String) {
-        val sourceImage = Imgcodecs.imread(srcPath, Imgcodecs.IMREAD_COLOR)
+        val sourceImage = opencv_imgcodecs.imread(srcPath, opencv_imgcodecs.IMREAD_COLOR)
         val destinationImage = Mat(sourceImage.rows(), sourceImage.cols(), sourceImage.type())
-        Core.bitwise_not(sourceImage, destinationImage)
-        Imgcodecs.imwrite(destPath, destinationImage)
+        opencv_core.bitwise_not(sourceImage, destinationImage)
+        opencv_imgcodecs.imwrite(destPath, destinationImage)
     }
 
     fun convertToGrayscale(srcPath: String, destPath: String) {
-        val sourceImage = Imgcodecs.imread(srcPath, Imgcodecs.IMREAD_COLOR)
-        val destinationImage = Mat(sourceImage.rows(), sourceImage.cols(), CvType.CV_8UC1)
-        Imgproc.cvtColor(sourceImage, destinationImage, Imgproc.COLOR_BGR2GRAY)
-        Imgcodecs.imwrite(destPath, destinationImage)
+        val sourceImage = opencv_imgcodecs.imread(srcPath, opencv_imgcodecs.IMREAD_COLOR)
+        val destinationImage = Mat(sourceImage.rows(), sourceImage.cols(), org.bytedeco.opencv.global.opencv_core.CV_8UC1)
+        opencv_imgproc.cvtColor(sourceImage, destinationImage, opencv_imgproc.CV_BGR2GRAY)
+        opencv_imgcodecs.imwrite(destPath, destinationImage)
     }
 
     fun singleMatch(frame: Mat, template: Mat): Pair<Point, Point> {
         val gray = Mat()
-        Imgproc.cvtColor(frame, gray, Imgproc.COLOR_BGR2GRAY)
+        opencv_imgproc.cvtColor(frame, gray, opencv_imgproc.COLOR_BGR2GRAY)
         val result = Mat()
-        Imgproc.matchTemplate(gray, template, result, Imgproc.TM_CCOEFF)
-        val minMaxResult = Core.minMaxLoc(result)
-        val topLeft = minMaxResult.maxLoc
+        opencv_imgproc.matchTemplate(gray, template, result, opencv_imgproc.TM_CCOEFF)
+
+        val minVal = DoublePointer(1L)
+        val maxVal = DoublePointer(1L)
+        val pointMin = Point()
+        val pointMax = Point()
+
+        opencv_core.minMaxLoc(result, minVal, maxVal, pointMin, pointMax, null)
+
+        val topLeft = pointMax
         val w = template.cols()
         val h = template.rows()
-        val bottomRight = Point(topLeft.x + w, topLeft.y + h)
+        val bottomRight = Point(topLeft.x() + w, topLeft.y() + h)
+
         return Pair(topLeft, bottomRight)
     }
 
     fun multiMatch(frame: Mat, template: Mat, threshold: Double = 0.95): List<Point> {
         val gray = Mat()
-        Imgproc.cvtColor(frame, gray, Imgproc.COLOR_BGR2GRAY)
-        val result = Mat()
-        Imgproc.matchTemplate(gray, template, result, Imgproc.TM_CCOEFF_NORMED)
+        opencv_imgproc.cvtColor(frame, gray, opencv_imgproc.COLOR_BGR2GRAY)
 
-        val thresHolded = Mat()
-        Core.inRange(result, Scalar(threshold), Scalar(1.0), thresHolded)
+        val result = Mat()
+        opencv_imgproc.matchTemplate(gray, template, result, opencv_imgproc.TM_CCOEFF_NORMED)
+
+        // Convert threshold values to Mat
+        val lowerb = Mat(1, 1, CV_32F, Scalar(threshold))
+        val upperb = Mat(1, 1, CV_32F, Scalar(1.0))
+
+        val thresholded = Mat()
+        opencv_core.inRange(result, lowerb, upperb, thresholded)
 
         val points = mutableListOf<Point>()
-        for (i in 0 until thresHolded.rows()) {
-            for (j in 0 until thresHolded.cols()) {
-                if (thresHolded.get(i, j)[0] > 0) {
+        val indexer: UByteRawIndexer = thresholded.createIndexer()
+
+        for (i in 0 until thresholded.rows()) {
+            for (j in 0 until thresholded.cols()) {
+                if (indexer.get(i.toLong(), j.toLong()).toInt() > 0) {
                     val x = (j + template.cols() / 2).toDouble()
                     val y = (i + template.rows() / 2).toDouble()
-                    points.add(Point(x, y))
+                    points.add(Point(x.toInt(), y.toInt()))
                 }
             }
         }
-
         return points
     }
 
-    fun convertToRoundInt(point: Point): Point {
-        return Point(point.x.roundToInt().toDouble(), point.y.roundToInt().toDouble())
-    }
 
-    fun convertToRelative(point: Point, frame: Mat): Point {
-        return Point(point.x / frame.width(), point.y / frame.height())
-    }
-
-    fun convertToAbsolute(point: Point, frame: Mat): Point {
-        return if (point.x < 1 && point.y < 1) {
-            Point((point.x * frame.width()).roundToInt().toDouble(), (point.y * frame.height()).roundToInt().toDouble())
+    private fun convertToAbsolute(point: Point2f, frame: Mat): Point {
+        return if (point.x() < 1 && point.y() < 1) {
+            Point((point.x() * frame.cols()).toInt(), (point.y() * frame.rows()).toInt())
         } else {
-            Point(point.x.roundToInt().toDouble(), point.y.roundToInt().toDouble())
+            Point(point.x().toInt(), point.y().toInt())
         }
     }
-    fun drawLocation(minimap: Mat, pos: Point, color: Scalar) {
+
+    fun drawLocation(minimap: Mat, pos: Point2f, color: Scalar) {
         val center = convertToAbsolute(pos, minimap)
         val radius = if (Config.moveThreshold < 1) {
             (minimap.cols() * Config.moveThreshold).toInt()
         } else {
             Config.moveThreshold
         }
-        Imgproc.circle(minimap, center, radius, color, 1)
+        opencv_imgproc.circle(minimap, center, radius, color, 1, 8, 0)
     }
 
     private fun distance(a: Pair<Int, Int>, b: Pair<Int, Int>): Double {
@@ -101,13 +114,12 @@ class ImageProcessor {
         return null
     }
 
-    companion object {
-        fun matToByteArray(image: Mat): ByteArray {
-            val matOfByte = MatOfByte()
-            Imgcodecs.imencode(".jpg", image, matOfByte)
-            return matOfByte.toArray()
-        }
+    fun convertBufferedImageToMat(bufferedImage: BufferedImage): Mat {
+        return Java2DFrameUtils.toMat(bufferedImage)
     }
 
+    fun saveMatToImage(mat: Mat, filePath: String) {
+        opencv_imgcodecs.imwrite(filePath, mat)
+    }
 
 }
